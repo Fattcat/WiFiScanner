@@ -1,6 +1,13 @@
-import time
+from time import sleep, strftime
 import pywifi
 from pywifi import const
+import os
+
+# Specify the folder where the files will be saved
+Folder = r"D:\PY-WiFiScan"
+
+if not os.path.exists(Folder):
+    os.makedirs(Folder)
 
 def freq_to_channel(freq):
     # Convert frequency to channel number
@@ -11,12 +18,13 @@ def freq_to_channel(freq):
     else:
         return None
 
+
 def scan_wifi():
     wifi = pywifi.PyWiFi()
     iface = wifi.interfaces()[0]
 
     iface.scan()
-    time.sleep(2)
+    sleep(2)
     scan_results = iface.scan_results()
 
     for result in scan_results:
@@ -35,11 +43,25 @@ def scan_wifi():
         print("+" + "--" * (len(bssid) - 3)  + "+")
         print("\n")
 
+        # Save to USB with a timestamp in the file name
+        timestamp = strftime("%Y-%m-%d %H-%M-%S")
+        filename = os.path.join(Folder, f"wifi_results_{timestamp}.txt")
+        save_to_usb(filename, ssid, channel, security_type, signal_strength)
+
+def save_to_usb(filename, ssid, channel, security_type, signal_strength):
+    with open(filename, "a") as file:
+        file.write("+" + "--" * 20 + "+\n")
+        file.write(f"WiFi (SSID): {ssid}\n")
+        file.write(f"Channel: {channel}\n")
+        file.write(f"Security Type: {security_type}\n")
+        file.write(f"WiFi Signal Strength: {signal_strength}\n")
+        file.write("+" + "--" * 20 + "+\n")
+
 def main():
     while True:
         print("\nScanning for WiFi networks...\n")
         scan_wifi()
-        time.sleep(8)
+        sleep(8)
 
 if __name__ == "__main__":
     main()

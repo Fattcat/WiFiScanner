@@ -2,12 +2,28 @@ from time import sleep, strftime
 import pywifi
 from pywifi import const
 import os
+import datetime
 
-# Specify the folder where the files will be saved
-Folder = r"D:\PY-WiFiScan"
+datum = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
 
-if not os.path.exists(Folder):
-    os.makedirs(Folder)
+# Specify the folder where the file will be saved
+folder = "/home/kali/Desktop/WiFiScanResult"
+
+if not os.path.exists(folder):
+    os.makedirs(folder)
+
+# Specify the file where the results will be saved
+filename = os.path.join(folder, f"{datum}.txt")
+
+# Mapping of numerical security types to their corresponding names
+security_type_mapping = {
+    const.AKM_TYPE_NONE: "None",
+    const.AKM_TYPE_WPA: "WPA",
+    const.AKM_TYPE_WPAPSK: "WPA-PSK",
+    const.AKM_TYPE_WPA2: "WPA2",
+    const.AKM_TYPE_WPA2PSK: "WPA2-PSK",
+    const.AKM_TYPE_UNKNOWN: "Unknown",
+}
 
 def freq_to_channel(freq):
     # Convert frequency to channel number
@@ -18,44 +34,40 @@ def freq_to_channel(freq):
     else:
         return None
 
+def get_security_type_name(security_type):
+    # Get the corresponding security type name
+    return security_type_mapping.get(security_type, "Unknown")
 
 def scan_wifi():
     wifi = pywifi.PyWiFi()
-    iface = wifi.interfaces()[0]
+    
+    # Use wlan1 as the wireless interface
+    iface = wifi.interfaces()[1]
 
     iface.scan()
     sleep(2)
     scan_results = iface.scan_results()
 
-    for result in scan_results:
-        ssid = result.ssid
-        bssid = result.bssid
-        freq = result.freq
-        channel = freq_to_channel(freq)
-        security_type = result.akm[0]
-        signal_strength = result.signal
-        print("+" + "--" * (len(bssid) - 3) + "+")
-        print("WiFi (SSID):", ssid)
-        print("Mac Address:", bssid)
-        print("Channel:", channel)
-        print("Security Type:", security_type)
-        print("WiFi Signal Strength:", signal_strength)
-        print("+" + "--" * (len(bssid) - 3)  + "+")
-        print("\n")
-
-        # Save to USB with a timestamp in the file name
-        timestamp = strftime("%Y-%m-%d %H-%M-%S")
-        filename = os.path.join(Folder, f"wifi_results_{timestamp}.txt")
-        save_to_usb(filename, ssid, channel, security_type, signal_strength)
-
-def save_to_usb(filename, ssid, channel, security_type, signal_strength):
     with open(filename, "a") as file:
-        file.write("+" + "--" * 20 + "+\n")
-        file.write(f"WiFi (SSID): {ssid}\n")
-        file.write(f"Channel: {channel}\n")
-        file.write(f"Security Type: {security_type}\n")
-        file.write(f"WiFi Signal Strength: {signal_strength}\n")
-        file.write("+" + "--" * 20 + "+\n")
+        file.write("+" + "--" * 20 + "\n")
+        file.write(f"Scan Time: {strftime('%Y-%m-%d %H:%M:%S')}\n")
+        for result in scan_results:
+            ssid = result.ssid
+            bssid = result.bssid
+            freq = result.freq
+            channel = freq_to_channel(freq)
+            security_type = get_security_type_name(result.akm[0])
+            signal_strength = result.signal
+
+            # Write to the file
+            file.write("+" + "--" * 20 + "+\n")
+            file.write("Datum : " + datum + "\n")
+            file.write(f"WiFi (SSID): {ssid}" + "\n")
+            file.write(f"MAC Address: {bssid}" + "\n")
+            file.write(f"Channel: {channel}" + "\n")
+            file.write(f"Security Type: {security_type}" + "\n")
+            file.write(f"WiFi Signal Strength: {signal_strength}" + "\n")
+            file.write("+" + "--" * 20 + "+\n\n")
 
 def main():
     while True:

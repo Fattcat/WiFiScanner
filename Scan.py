@@ -5,17 +5,13 @@ import os
 import datetime
 
 datum = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
-
-# Specify the folder where the file will be saved
 folder = "/home/kali/Desktop/WiFiScanResult"
 
 if not os.path.exists(folder):
     os.makedirs(folder)
 
-# Specify the file where the results will be saved
 filename = os.path.join(folder, f"{datum}.txt")
 
-# Mapping of numerical security types to their corresponding names
 security_type_mapping = {
     const.AKM_TYPE_NONE: "None",
     const.AKM_TYPE_WPA: "WPA",
@@ -26,7 +22,6 @@ security_type_mapping = {
 }
 
 def freq_to_channel(freq):
-    # Convert frequency to channel number
     if 2412 <= freq <= 2484:
         return (freq - 2412) // 5 + 1
     elif 5180 <= freq <= 5825:
@@ -35,18 +30,30 @@ def freq_to_channel(freq):
         return None
 
 def get_security_type_name(security_type):
-    # Get the corresponding security type name
     return security_type_mapping.get(security_type, "Unknown")
 
-def scan_wifi():
+def list_wifi_adapters():
     wifi = pywifi.PyWiFi()
-    
-    # Use wlan1 as the wireless interface
-    iface = wifi.interfaces()[1]
+    interfaces = wifi.interfaces()
+    print("Available WiFi adapters:")
+    for i, iface in enumerate(interfaces):
+        print(f"{i + 1}. {iface.name()} {iface.iface.name()}")
 
-    iface.scan()
+def get_selected_interface():
+    list_wifi_adapters()
+    selected_index = int(input("Select the WiFi adapter (index): ")) - 1
+
+    try:
+        selected_interface = pywifi.PyWiFi().interfaces()[selected_index]
+        return selected_interface
+    except IndexError:
+        print("Invalid selection.")
+        return None
+
+def scan_wifi(interface):
+    interface.scan()
     sleep(2)
-    scan_results = iface.scan_results()
+    scan_results = interface.scan_results()
 
     with open(filename, "a") as file:
         file.write("+" + "--" * 20 + "\n")
@@ -59,7 +66,6 @@ def scan_wifi():
             security_type = get_security_type_name(result.akm[0])
             signal_strength = result.signal
 
-            # Write to the file
             file.write("+" + "--" * 20 + "+\n")
             file.write("Datum : " + datum + "\n")
             file.write(f"WiFi (SSID): {ssid}" + "\n")
@@ -71,9 +77,11 @@ def scan_wifi():
 
 def main():
     while True:
-        print("\nScanning for WiFi networks...\n")
-        scan_wifi()
-        sleep(8)
+        selected_interface = get_selected_interface()
+        if selected_interface:
+            print("\nScanning for WiFi networks...\n")
+            scan_wifi(selected_interface)
+            sleep(8)
 
 if __name__ == "__main__":
     main()

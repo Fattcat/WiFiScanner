@@ -44,9 +44,9 @@ def freq_to_channel(freq):
     else:
         return None
 
-def get_security_type_name(security_type):
+def get_security_type_name(result):
     # Get the corresponding security type name
-    return security_type_mapping.get(security_type, "Unknown")
+    return security_type_mapping.get(result.akm[0], "Unknown") if result.akm else "Unknown"
 
 def scan_wifi():
     wifi = pywifi.PyWiFi()
@@ -72,7 +72,7 @@ def scan_wifi():
             bssid = result.bssid
             freq = result.freq
             channel = freq_to_channel(freq)
-            security_type = get_security_type_name(result.akm[0])
+            security_type = get_security_type_name(result)
             signal_strength = result.signal
 
             # Print colored results to the terminal
